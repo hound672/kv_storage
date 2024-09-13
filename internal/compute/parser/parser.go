@@ -14,7 +14,9 @@ func New() *Parser {
 }
 
 func (p *Parser) Parse(text string) (models.Command, error) {
-	tokens := strings.Split(text, " ")
+	t := strings.TrimSpace(text)
+
+	tokens := strings.Split(t, " ")
 	if len(tokens) <= 1 {
 		return models.Command{}, models.ErrInvalidCommand
 	}
@@ -30,7 +32,7 @@ func (p *Parser) Parse(text string) (models.Command, error) {
 		return parseDEL(args)
 	}
 
-	return models.Command{}, nil
+	return models.Command{}, models.ErrInvalidCommand
 }
 
 func parseSET(tokens []string) (models.Command, error) {
