@@ -69,10 +69,12 @@ tasks:
     cmds:
       - "{{.LOCAL_BIN}}/mockery --name {{.NAME}} --dir {{.DIR}} --output {{.DIR}}/mocks"
 
-#  mocks:
-#    deps:
-#      - init
-#    cmds:
+  mocks:
+    deps:
+      - init
+    cmds:
+      - task: .mock
+        vars: { NAME: 'Storage', DIR: './internal/storage' }
 
   generate:
     deps:
