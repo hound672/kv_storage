@@ -1,0 +1,80 @@
+version: '3'
+
+silent: false
+
+vars:
+  LOCAL_BIN: "{{.USER_WORKING_DIR}}/bin"
+  GOLANGCI_LINT_VERSION: v1.56.0
+  MOCKERY_VERSION: v2.41.0
+  GOTESTSUM_VERSION: v1.11.0
+
+env:
+  GOBIN: "{{.LOCAL_BIN}}"
+  GOPRIVATE: "{{.GOPRIVATE}}"
+
+tasks:
+  install_golangci_lint:
+    cmds:
+      - "go install github.com/golangci/golangci-lint/cmd/golangci-lint@{{.GOLANGCI_LINT_VERSION}}"
+
+  install_bin_deps:
+    cmds:
+      - "go install github.com/vektra/mockery/v2@{{.MOCKERY_VERSION}}"
+      - "go install gotest.tools/gotestsum@{{.GOTESTSUM_VERSION}}"
+
+  init:
+    deps:
+      - install_golangci_lint
+      - install_bin_deps
+    cmds:
+      - "go mod download"
+
+  clean:
+    cmds:
+      - "rm -rf ./bin"
+      - "rm -rf ./coverage.out"
+      - "go clean -cache"
+
+  lint:
+    deps:
+      - init
+    cmds:
+      - "{{.LOCAL_BIN}}/golangci-lint run --fix"
+
+  tests:
+    deps:
+      - init
+    cmds:
+      - "{{.LOCAL_BIN}}/gotestsum --format pkgname -- -coverprofile=coverage.out -race -count=1 ./..."
+
+  tests_integration:
+    desc: Запуск юниттестов + интеграционные
+    deps:
+      - init
+    cmds:
+      - "{{.LOCAL_BIN}}/gotestsum --format pkgname -- -coverprofile=coverage.out -race -tags=integration -count=1 ./..."
+
+  quality:
+    deps:
+      - lint
+      - tests_integration
+
+  build_binary:
+    deps:
+      - quality
+    cmds:
+      - "go build -v -o kv_storage ./cmd"
+
+  .mock:
+    cmds:
+      - "{{.LOCAL_BIN}}/mockery --name {{.NAME}} --dir {{.DIR}} --output {{.DIR}}/mocks"
+
+#  mocks:
+#    deps:
+#      - init
+#    cmds:
+
+  generate:
+    deps:
+      - mocks
+
